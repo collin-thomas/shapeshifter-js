@@ -13,6 +13,9 @@ let player = {
 let blocks = [
   { x: 150, y: 70, size: 30, color: "red" },
   { x: 230, y: 150, size: 30, color: "green" },
+  { x: 230, y: 200, size: 30, color: "yellow" },
+  { x: 50, y: 300, size: 30, color: "pink" },
+  { x: 400, y: 40, size: 30, color: "black" },
   // Add more blocks as needed
 ];
 
@@ -64,16 +67,34 @@ function setLastDirectionSpacing() {
 
 function playerAbleToEject() {
   // Calculate potential position for the previous block based on last direction
+  let c;
+  let eNewX = player.x;
+  let eNewY = player.y;
   switch (lastDirection) {
     case "left":
-      return !isCollision(player.x - 30, player.y);
+      c = isCollision(player.x - 30, player.y);
+      eNewX -= 30;
+      break;
     case "right":
-      return !isCollision(player.x + 30, player.y);
+      c = isCollision(player.x + 30, player.y);
+      eNewX += 30;
+      break;
     case "up":
-      return !isCollision(player.x, player.y - 30);
+      c = isCollision(player.x, player.y - 30);
+      eNewY -= 30;
+      break;
     case "down":
-      return !isCollision(player.x, player.y + 30);
+      c = isCollision(player.x, player.y + 30);
+      eNewY -= 30;
+      break;
   }
+  return (
+    !c &&
+    eNewX >= 0 &&
+    eNewY >= 0 &&
+    eNewX <= canvas.width - player.size &&
+    eNewY <= canvas.height - player.size
+  );
 }
 
 document.addEventListener("keydown", function (event) {
