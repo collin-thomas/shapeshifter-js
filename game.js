@@ -3,23 +3,25 @@ const ctx = canvas.getContext("2d");
 canvas.width = 500;
 canvas.height = 500;
 
+let lastDirection;
+let keysPressed = {};
+
 let player = {
   x: 50,
   y: 50,
   size: 30,
   color: "blue",
+  speed: 2,
 };
 
 let blocks = [
-  { x: 150, y: 70, size: 30, color: "red" },
-  { x: 230, y: 150, size: 30, color: "green" },
-  { x: 230, y: 200, size: 30, color: "yellow" },
-  { x: 50, y: 300, size: 30, color: "pink" },
-  { x: 400, y: 40, size: 30, color: "black" },
+  { x: 150, y: 70, size: 30, color: "red", speed: 2 },
+  { x: 230, y: 150, size: 30, color: "green", speed: 2 },
+  { x: 230, y: 200, size: 30, color: "yellow", speed: 2 },
+  { x: 50, y: 300, size: 30, color: "pink", speed: 2 },
+  { x: 400, y: 40, size: 30, color: "black", speed: 2 },
   // Add more blocks as needed
 ];
-
-let lastDirection;
 
 function drawBlock(block) {
   ctx.fillStyle = block.color;
@@ -97,47 +99,27 @@ function playerAbleToEject() {
   );
 }
 
-document.addEventListener("keydown", function (event) {
+function updatePlayerPosition() {
   let newX = player.x;
   let newY = player.y;
 
-  switch (event.key) {
-    case "ArrowLeft":
-      newX -= 10;
-      lastDirection = "left";
-      break;
-    case "ArrowRight":
-      newX += 10;
-      lastDirection = "right";
-      break;
-    case "ArrowUp":
-      newY -= 10;
-      lastDirection = "up";
-      break;
-    case "ArrowDown":
-      newY += 10;
-      lastDirection = "down";
-      break;
-    case " ":
-      let adjacentBlock = blocks.find(
-        (b) =>
-          Math.abs(b.x - player.x) <= player.size &&
-          Math.abs(b.y - player.y) <= player.size
-      );
-      if (adjacentBlock && !player.previous) {
-        player = { ...adjacentBlock, previous: player };
-        blocks.splice(blocks.indexOf(adjacentBlock), 1);
-      }
-      if (player.previous && !adjacentBlock && playerAbleToEject()) {
-        blocks.push({ ...player });
-        player.color = player.previous.color;
-        delete player.previous;
-        setLastDirectionSpacing();
-      }
-      return; // Prevent movement when swapping colors
+  if (keysPressed["ArrowLeft"]) {
+    newX -= player.speed;
+    lastDirection = "left";
+  }
+  if (keysPressed["ArrowRight"]) {
+    newX += player.speed;
+    lastDirection = "right";
+  }
+  if (keysPressed["ArrowUp"]) {
+    newY -= player.speed;
+    lastDirection = "up";
+  }
+  if (keysPressed["ArrowDown"]) {
+    newY += player.speed;
+    lastDirection = "down";
   }
 
-  // Check for collision with other blocks and canvas boundaries
   if (
     !isCollision(newX, newY) &&
     newX >= 0 &&
@@ -148,6 +130,48 @@ document.addEventListener("keydown", function (event) {
     player.x = newX;
     player.y = newY;
   }
-});
+}
 
-setInterval(draw, 10);
+function handleSpaceBar() {
+  let adjacentBlock = blocks.find(
+    (b) =>
+      Math.abs(b.x - player.x) <= player.size &&
+      Math.abs(b.y - player.y) <= player.size
+  );
+  if (adjacentBlock && !player.previous) {
+    player = { ...adjacentBlock, previous: player };
+    blocks.splice(blocks.indexOf(adjacentBlock), 1);
+  }
+  if (player.previous && !adjacentBlock && playerAbleToEject()) {
+    blocks.push({ ...player });
+    player.color = player.previous.color;
+    delete player.previous;
+    setLastDirectionSpacing();
+  }
+  return; // Prevent movement when swapping colors
+}
+
+function handleKeydown(event) {
+  keysPressed[event.key] = true;
+  if (event.key === " ") {
+    handleSpaceBar();
+    event.preventDefault(); // Prevent scrolling with space bar
+  }
+}
+
+function handleKeyup(event) {
+  keysPressed[event.key] = false;
+}
+
+document.addEventListener("keydown", handleKeydown);
+document.addEventListener("keyup", handleKeyup);
+
+function gameLoop() {
+  updatePlayerPosition();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+// requestAnimationFrame() method tells the browser you wish to perform an animation.
+// It requests the browser to call a user-supplied callback function before the next repaint.
+requestAnimationFrame(gameLoop);
