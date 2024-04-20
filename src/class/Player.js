@@ -68,8 +68,8 @@ export class Player extends GameObject {
     return false;
   }
 
-  handleSpaceBar(blocks, canvas) {
-    let adjacentBlock = blocks.find(
+  handleSpaceBar(playableObject, canvas) {
+    let adjacentBlock = playableObject.find(
       (b) =>
         Math.abs(b.x - this.x) <= this.size &&
         Math.abs(b.y - this.y) <= this.size
@@ -78,13 +78,13 @@ export class Player extends GameObject {
     if (adjacentBlock && !this.previous) {
       this.previous = { ...this }; // Clone current state
       Object.assign(this, adjacentBlock);
-      blocks.splice(blocks.indexOf(adjacentBlock), 1);
+      playableObject.splice(playableObject.indexOf(adjacentBlock), 1);
     } else if (
       this.previous &&
       !adjacentBlock &&
-      this.playerAbleToEject(canvas, blocks)
+      this.playerAbleToEject(canvas, playableObject)
     ) {
-      blocks.push(
+      playableObject.push(
         new GameObject(this.x, this.y, this.size, this.color, this.speed)
       );
       this.color = this.previous.color;
