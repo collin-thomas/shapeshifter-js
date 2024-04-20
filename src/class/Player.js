@@ -2,10 +2,23 @@ import { GameObject } from "./GameObject";
 import { sendState } from "../websocket";
 
 export class Player extends GameObject {
-  constructor(x, y, size, color, speed) {
-    super(x, y, size, color, speed);
+  constructor({ id, x, y, size, color, speed }) {
+    super({ id, x, y, size, color, speed });
     this.lastDirection = null;
     this.previous = null;
+  }
+
+  draw(ctx) {
+    super.draw(ctx);
+    // Calculate the center of the rectangle
+    const centerX = this.x + 30 / 2;
+    const centerY = this.y + 30 / 2;
+
+    // Draw a rounded dot at the center of the rectangle
+    ctx.fillStyle = "white"; // Red color for the dot
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 5, 0, Math.PI * 2, true); // Circle radius 5
+    ctx.fill();
   }
 
   updatePosition(keysPressed, canvas, blocks) {
@@ -51,7 +64,7 @@ export class Player extends GameObject {
     this.y = newY;
 
     // Send update to server
-    sendState(this);
+    sendState({ player: this });
   }
 
   isCollision(newX, newY, blocks) {
