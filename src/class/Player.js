@@ -22,7 +22,7 @@ export class Player extends GameObject {
     ctx.fill();
   }
 
-  updatePosition(keysPressed, canvas, blocks) {
+  updatePosition(keysPressed, canvas, playableObjects, otherPlayers) {
     let newX = this.x;
     let newY = this.y;
 
@@ -47,7 +47,9 @@ export class Player extends GameObject {
     if (newX === this.x && newY === this.y) return;
 
     // Don't update position if there is a collision
-    if (this.isCollision(newX, newY, blocks)) return;
+    if (this.isCollision(newX, newY, [...playableObjects, ...otherPlayers])) {
+      return;
+    }
 
     // Don't update if out of bounds
     if (
@@ -57,8 +59,9 @@ export class Player extends GameObject {
         newX <= canvas.width - this.size &&
         newY <= canvas.height - this.size
       )
-    )
+    ) {
       return;
+    }
 
     // Update position
     this.x = newX;
@@ -68,13 +71,13 @@ export class Player extends GameObject {
     sendState({ player: this });
   }
 
-  isCollision(newX, newY, blocks) {
-    for (let block of blocks) {
+  isCollision(newX, newY, playableObjects) {
+    for (let playableObject of playableObjects) {
       if (
-        newX < block.x + block.size &&
-        newX + this.size > block.x &&
-        newY < block.y + block.size &&
-        newY + this.size > block.y
+        newX < playableObject.x + playableObject.size &&
+        newX + this.size > playableObject.x &&
+        newY < playableObject.y + playableObject.size &&
+        newY + this.size > playableObject.y
       ) {
         return true;
       }
@@ -82,7 +85,7 @@ export class Player extends GameObject {
     return false;
   }
 
-  handleSpaceBar(playableObjects, canvas) {
+  handleSpaceBar(canvas, playableObjects, otherPlayers) {
     let adjacentBlock = playableObjects.find(
       (b) =>
         Math.abs(b.x - this.x) <= this.size &&
@@ -97,7 +100,7 @@ export class Player extends GameObject {
     } else if (
       this.previous &&
       !adjacentBlock &&
-      this.playerAbleToEject(canvas, playableObjects)
+      this.playerAbleToEject(canvas, [...playableObjects, ...otherPlayers])
     ) {
       const restoredPlayableObject = new PlayableObject({
         id: this.id,

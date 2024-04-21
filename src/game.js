@@ -36,9 +36,7 @@ export function loadGame(gameStateFromSever) {
   document.addEventListener("keydown", (event) => {
     keysPressed[event.key] = true;
     if (event.key === " ") {
-      console.log(_.playableObjects.length);
-      _.player.handleSpaceBar(_.playableObjects, canvas);
-      console.log(_.playableObjects.length);
+      _.player.handleSpaceBar(canvas, _.playableObjects, _.otherPlayers);
       event.preventDefault();
     }
   });
@@ -48,7 +46,12 @@ export function loadGame(gameStateFromSever) {
   });
 
   function gameLoop() {
-    _.player.updatePosition(keysPressed, canvas, _.playableObjects);
+    _.player.updatePosition(
+      keysPressed,
+      canvas,
+      _.playableObjects,
+      _.otherPlayers
+    );
     draw();
     requestAnimationFrame(gameLoop);
   }
