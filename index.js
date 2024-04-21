@@ -64,9 +64,7 @@ const generateNewPlayer = (id) => {
 };
 
 const applyPlayerUpdate = (player) => {
-  //console.log("before", db.players);
   db.players = db.players.map((p) => (p.id !== player.id ? p : player));
-  //console.log("after", db.players);
 };
 
 const applyPlayableObjectsUpdate = (playableObjects) => {
@@ -78,6 +76,18 @@ const removePlayer = (id) => {
   db.players = db.players.filter((p) => p.id !== id);
 };
 
+const parseCookies = (req) => {
+  const cs = req?.headers?.get("cookie");
+  if (!cs) return {};
+  const cookies = cs.split(" ;");
+  const cookie = {};
+  cookies.forEach((c) => {
+    const split = c.split(/=(.*)/s);
+    cookie[split[0]] = split[1];
+  });
+  return cookie;
+};
+
 const syncClients = (server) => {
   server.publish(
     "sync-clients",
@@ -87,7 +97,14 @@ const syncClients = (server) => {
 
 const server = Bun.serve({
   fetch(req, server) {
-    const success = server.upgrade(req);
+    let playerId;
+    const cookie = parseCookies(req);
+    if (cookie.id) {
+      playerId = cookie.id;
+    } else {
+      playerId = randomUUID();
+    }
+    const success = server.upgrade(req, { data: { id: playerId } });
     if (success) {
       // Bun automatically returns a 101 Switching Protocols
       // if the upgrade succeeds
@@ -110,6 +127,7 @@ const server = Bun.serve({
       return new Response(Bun.file("./dist/app.js"), {
         headers: {
           "Content-Type": "application/javascript",
+          "Set-Cookie": `id=${playerId}; HttpOnly`,
         },
       });
     }
@@ -135,7 +153,8 @@ const server = Bun.serve({
       }
     },
     async open(ws) {
-      const newPlayer = generateNewPlayer(randomUUID());
+      console.log("open", ws.data);
+      const newPlayer = generateNewPlayer(ws.data.id);
       const message = { ...db, newPlayer };
       ws.send(JSON.stringify(message));
 
@@ -143,9 +162,9 @@ const server = Bun.serve({
       syncClients(server);
     }, // a socket is opened
     close(ws) {
-      console.log("close", ws?.data?.id);
+      console.log("close", ws.data);
       ws.unsubscribe("sync-clients");
-      //removePlayer(ws.data.id);
+      removePlayer(ws.data.id);
       syncClients(server);
     },
     async drain(ws) {}, // the socket is ready to receive more data
