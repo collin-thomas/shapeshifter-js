@@ -1,10 +1,10 @@
-const ws = new WebSocket("ws://localhost:3000/", "protocolOne");
+export const ws = new WebSocket("ws://localhost:3000/", "protocolOne");
 
 export function sendState(state) {
   if (ws.readyState !== WebSocket.OPEN) {
     return console.warn("Did not send data, websocket not ready");
   }
-  //console.log(state);
+  //console.log("Send State", state);
   ws.send(JSON.stringify(state));
 }
 
@@ -35,6 +35,7 @@ export function waitForNewPlayerData(timeout = 5000) {
     }, timeout);
 
     ws.addEventListener("message", function onMessage(event) {
+      console.log("New Player WebSocket Message Received Message");
       const data = JSON.parse(event.data);
       if (!data.newPlayer) return;
       console.log("New Player WebSocket Message");
@@ -50,7 +51,3 @@ export function waitForNewPlayerData(timeout = 5000) {
     });
   });
 }
-
-ws.addEventListener("message", (event) => {
-  console.log(JSON.parse(event.data));
-});

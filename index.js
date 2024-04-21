@@ -45,11 +45,11 @@ const initValuesForPlayableObjects = [
 
 const db = { players: [], playableObjects: [...initValuesForPlayableObjects] };
 
-const generateNewPlayer = () => {
+const generateNewPlayer = (id) => {
   // spawn random coords and color.
   // todo: and ensure there is not a collision
   const newPlayer = {
-    id: randomUUID(),
+    id,
     // Interesting bug where odd numbers the block couldn't move right up against each other
     x: Math.floor(Math.random() * 201) * 2,
     y: Math.floor(Math.random() * 201) * 2,
@@ -64,7 +64,21 @@ const generateNewPlayer = () => {
 };
 
 const applyPlayerUpdate = (player) => {
+  //console.log("before", db.players);
   db.players = db.players.map((p) => (p.id !== player.id ? p : player));
+  //console.log("after", db.players);
+};
+
+const removePlayer = (id) => {
+  if (!id) return;
+  db.players = db.players.filter((p) => p.id !== id);
+};
+
+const syncClients = (server) => {
+  server.publish(
+    "sync-clients",
+    JSON.stringify({ ...db, type: "sync-clients" })
+  );
 };
 
 const server = Bun.serve({
@@ -107,19 +121,26 @@ const server = Bun.serve({
         if (data.player) {
           applyPlayerUpdate(data.player);
         }
-
-        // send back a message
-        ws.send(JSON.stringify({ ...db }));
+        // Publish update to rest of players
+        syncClients(server);
       } catch (error) {
         console.error(error);
       }
     },
     async open(ws) {
-      const newPlayer = generateNewPlayer();
+      const newPlayer = generateNewPlayer(randomUUID());
       const message = { ...db, newPlayer };
       ws.send(JSON.stringify(message));
+
+      ws.subscribe("sync-clients");
+      syncClients(server);
     }, // a socket is opened
-    async close(ws, code, message) {}, // a socket is closed
+    close(ws) {
+      console.log("close", ws?.data?.id);
+      ws.unsubscribe("sync-clients");
+      //removePlayer(ws.data.id);
+      syncClients(server);
+    },
     async drain(ws) {}, // the socket is ready to receive more data
   },
 });
