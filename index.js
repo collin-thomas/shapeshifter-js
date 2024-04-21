@@ -69,6 +69,10 @@ const applyPlayerUpdate = (player) => {
   //console.log("after", db.players);
 };
 
+const applyPlayableObjectsUpdate = (playableObjects) => {
+  db.playableObjects = playableObjects;
+};
+
 const removePlayer = (id) => {
   if (!id) return;
   db.players = db.players.filter((p) => p.id !== id);
@@ -120,6 +124,9 @@ const server = Bun.serve({
         const data = JSON.parse(message);
         if (data.player) {
           applyPlayerUpdate(data.player);
+        }
+        if (data.playableObjects) {
+          applyPlayableObjectsUpdate(data.playableObjects);
         }
         // Publish update to rest of players
         syncClients(server);

@@ -27,14 +27,18 @@ export function loadGame(gameStateFromSever) {
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     _.player.draw(ctx);
-    _.playableObjects.forEach((playableObject) => playableObject.draw(ctx));
+    _.playableObjects.forEach((playableObject) => {
+      playableObject.draw(ctx);
+    });
     _.otherPlayers.forEach((otherPlayer) => otherPlayer.draw(ctx));
   }
 
   document.addEventListener("keydown", (event) => {
     keysPressed[event.key] = true;
     if (event.key === " ") {
+      console.log(_.playableObjects.length);
       _.player.handleSpaceBar(_.playableObjects, canvas);
+      console.log(_.playableObjects.length);
       event.preventDefault();
     }
   });
@@ -57,6 +61,8 @@ export function loadGame(gameStateFromSever) {
       _.otherPlayers = msg.players
         .filter((otherPlayer) => otherPlayer.id !== _.player.id)
         .map((p) => new OtherPlayer(p));
+
+      _.playableObjects = msg.playableObjects.map((p) => new PlayableObject(p));
     }
   });
 

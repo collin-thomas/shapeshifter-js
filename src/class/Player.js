@@ -1,5 +1,6 @@
 import { GameObject } from "./GameObject";
 import { sendState } from "../websocket";
+import { PlayableObject } from "./PlayableObject";
 
 export class Player extends GameObject {
   constructor({ id, x, y, size, color, speed }) {
@@ -81,8 +82,8 @@ export class Player extends GameObject {
     return false;
   }
 
-  handleSpaceBar(playableObject, canvas) {
-    let adjacentBlock = playableObject.find(
+  handleSpaceBar(playableObjects, canvas) {
+    let adjacentBlock = playableObjects.find(
       (b) =>
         Math.abs(b.x - this.x) <= this.size &&
         Math.abs(b.y - this.y) <= this.size
@@ -90,44 +91,52 @@ export class Player extends GameObject {
 
     if (adjacentBlock && !this.previous) {
       this.previous = { ...this }; // Clone current state
-      Object.assign(this, adjacentBlock);
-      playableObject.splice(playableObject.indexOf(adjacentBlock), 1);
+      const { id, ...adjacentBlockNoId } = adjacentBlock;
+      Object.assign(this, adjacentBlockNoId);
+      playableObjects.splice(playableObjects.indexOf(adjacentBlock), 1);
     } else if (
       this.previous &&
       !adjacentBlock &&
-      this.playerAbleToEject(canvas, playableObject)
+      this.playerAbleToEject(canvas, playableObjects)
     ) {
-      playableObject.push(
-        new GameObject(this.x, this.y, this.size, this.color, this.speed)
-      );
+      const restoredPlayableObject = new PlayableObject({
+        id: this.id,
+        x: this.x,
+        y: this.y,
+        size: this.size,
+        color: this.color,
+        speed: this.speed,
+      });
+      playableObjects.push(restoredPlayableObject);
+      console.log({ restoredPlayableObject });
       this.color = this.previous.color;
       this.previous = null;
       this.setLastDirectionSpacing();
     }
     // Send update to server
-    sendState(this);
+    sendState({ player: this, playableObjects });
   }
 
-  playerAbleToEject(canvas, blocks) {
+  playerAbleToEject(canvas, playableObjects) {
     let eNewX = this.x;
     let eNewY = this.y;
     let c = false;
 
     switch (this.lastDirection) {
       case "left":
-        c = this.isCollision(this.x - 30, this.y, blocks);
+        c = this.isCollision(this.x - 30, this.y, playableObjects);
         eNewX -= 30;
         break;
       case "right":
-        c = this.isCollision(this.x + 30, this.y, blocks);
+        c = this.isCollision(this.x + 30, this.y, playableObjects);
         eNewX += 30;
         break;
       case "up":
-        c = this.isCollision(this.x, this.y - 30, blocks);
+        c = this.isCollision(this.x, this.y - 30, playableObjects);
         eNewY -= 30;
         break;
       case "down":
-        c = this.isCollision(this.x, this.y + 30, blocks);
+        c = this.isCollision(this.x, this.y + 30, playableObjects);
         eNewY += 30;
         break;
     }
