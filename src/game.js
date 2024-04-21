@@ -12,27 +12,29 @@ export function loadGame(gameStateFromSever) {
 
   const keysPressed = {};
 
-  const player = new Player(gameStateFromSever.newPlayer);
-  const playableObjects = gameStateFromSever.playableObjects.map(
+  const _ = {};
+
+  _.player = new Player(gameStateFromSever.newPlayer);
+
+  _.playableObjects = gameStateFromSever.playableObjects.map(
     (data) => new PlayableObject(data)
   );
 
-  const localState = {};
-  localState.otherPlayers = gameStateFromSever.players
-    .filter((otherPlayer) => otherPlayer.id !== player.id)
-    .map((player) => new OtherPlayer(player));
+  _.otherPlayers = gameStateFromSever.players
+    .filter((otherPlayer) => otherPlayer.id !== _.player.id)
+    .map((p) => new OtherPlayer(p));
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    player.draw(ctx);
-    playableObjects.forEach((playableObject) => playableObject.draw(ctx));
-    localState.otherPlayers.forEach((otherPlayer) => otherPlayer.draw(ctx));
+    _.player.draw(ctx);
+    _.playableObjects.forEach((playableObject) => playableObject.draw(ctx));
+    _.otherPlayers.forEach((otherPlayer) => otherPlayer.draw(ctx));
   }
 
   document.addEventListener("keydown", (event) => {
     keysPressed[event.key] = true;
     if (event.key === " ") {
-      player.handleSpaceBar(playableObjects, canvas);
+      _.player.handleSpaceBar(_.playableObjects, canvas);
       event.preventDefault();
     }
   });
@@ -42,7 +44,7 @@ export function loadGame(gameStateFromSever) {
   });
 
   function gameLoop() {
-    player.updatePosition(keysPressed, canvas, playableObjects);
+    _.player.updatePosition(keysPressed, canvas, _.playableObjects);
     draw();
     requestAnimationFrame(gameLoop);
   }
@@ -52,9 +54,9 @@ export function loadGame(gameStateFromSever) {
     if (msg.type === "sync-clients") {
       console.log(msg);
 
-      localState.otherPlayers = msg.players
-        .filter((otherPlayer) => otherPlayer.id !== player.id)
-        .map((player) => new OtherPlayer(player));
+      _.otherPlayers = msg.players
+        .filter((otherPlayer) => otherPlayer.id !== _.player.id)
+        .map((p) => new OtherPlayer(p));
     }
   });
 
