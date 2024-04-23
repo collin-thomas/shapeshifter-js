@@ -9,10 +9,8 @@
     "typescript": "^5.0.0"
   },
   "scripts": {
-    "build:prd": "cp -R public/* dist &&  bun build ./src/app.js --outdir ./dist",
-    "build:dev": "cp -R public/* dist &&  bun build ./src/app.js --outdir ./dist  --watch",
-    "dev": "bun --hot index.js",
-    "start": "bun run index.js"
+    "build:dev": "cp -R public/* dist && bun build ./src/app.js --outdir ./dist  --watch",
+    "dev": "bun --hot index.js"
   },
   "dependencies": {}
 }

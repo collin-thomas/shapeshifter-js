@@ -17,7 +17,9 @@ FROM base AS build
 COPY --from=install /temp/prod/node_modules node_modules
 COPY . .
 ENV NODE_ENV=production
-RUN bun build:prd
+RUN mkdir dist
+RUN cp -R public/* dist
+RUN bun build ./src/app.js --outdir ./dist
 
 # copy production dependencies and source code into final image
 FROM oven/bun:1.1.4-alpine AS release
