@@ -9,7 +9,7 @@
     "typescript": "^5.0.0"
   },
   "scripts": {
-    "build:dev": "cp -R public/* dist && bun build ./src/app.js --outdir ./dist  --watch",
+    "build:dev": "mkdir -p dist && cp -R public/* dist && bun build ./src/app.js --outdir ./dist  --watch",
     "dev": "bun --hot index.js"
   },
   "dependencies": {}
