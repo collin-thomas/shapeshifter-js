@@ -1,4 +1,8 @@
-export const ws = new WebSocket(`ws://${location.host}/`, "protocolOne");
+const protocol = process.env.NODE_ENV === "production" ? "wss" : "ws";
+export const ws = new WebSocket(
+  `${protocol}://${location.host}/`,
+  "protocolOne"
+);
 
 export function sendState(state) {
   if (ws.readyState !== WebSocket.OPEN) {
