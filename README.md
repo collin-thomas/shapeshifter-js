@@ -20,4 +20,18 @@ Terminal 2:
 bun dev
 ```
 
+## Docker
+
+To build:
+
+```bash
+docker build -t shapeshifter-js .
+```
+
+To run:
+
+```bash
+docker run --rm -it -p 3000:3000 shapeshifter-js
+```
+
 This project was created using `bun init` in bun v1.1.4. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.

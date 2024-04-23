@@ -260,4 +260,14 @@ const server = Bun.serve({
   },
 });
 
+process.on("SIGINT", () => {
+  console.log("Ctrl-C was pressed");
+  process.exit();
+});
+
+process.on("SIGTERM", function () {
+  console.log("Received SIGTERM. Graceful shutdown...");
+  process.exit();
+});
+
 console.log(`Listening on ${server.hostname}:${server.port}`);
