@@ -17,7 +17,7 @@ FROM base AS build
 COPY --from=install /temp/prod/node_modules node_modules
 COPY . .
 ENV NODE_ENV=production
-RUN mkdir dist
+RUN mkdir -p dist
 RUN cp -R public/* dist
 RUN bun build ./src/app.js --outdir ./dist
 

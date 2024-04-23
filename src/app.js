@@ -11,7 +11,8 @@ async function init() {
   } catch (error) {
     console.error("init error", error);
     const msgEL = document.getElementById("msg");
-    msgEL.innerText = "You can only have one tab open";
+    msgEL.innerText =
+      "Something went wrong. It is possible you tried to open a second tab with an active game.";
   }
 }
 

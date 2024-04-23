@@ -1,4 +1,4 @@
-export const ws = new WebSocket("ws://localhost:3000/", "protocolOne");
+export const ws = new WebSocket(`ws://${location.host}/`, "protocolOne");
 
 export function sendState(state) {
   if (ws.readyState !== WebSocket.OPEN) {
