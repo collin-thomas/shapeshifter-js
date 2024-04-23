@@ -174,6 +174,13 @@ const server = Bun.serve({
         // Prevent someone trying to sending updates
         // with a player id that doesn't exist.
         console.log("message");
+        const playerId = ws.data.id;
+
+        // If you cannot find playerid, close connection
+        if (!serverState.connections.find((c) => c.playerId === playerId)) {
+          ws.close(4001);
+          return;
+        }
 
         const data = JSON.parse(message);
         if (data.player) {
@@ -236,6 +243,9 @@ const server = Bun.serve({
       const playerId = ws.data.id;
       console.log("close", { playerId, code, message });
       if (code === 4000) {
+        return;
+      }
+      if (code === 4001) {
         return;
       }
       ws.unsubscribe("sync-clients");

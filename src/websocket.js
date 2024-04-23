@@ -2,6 +2,10 @@ export const ws = new WebSocket("ws://localhost:3000/", "protocolOne");
 
 export function sendState(state) {
   if (ws.readyState !== WebSocket.OPEN) {
+    const canvas = document.getElementById("gameCanvas");
+    const msgEl = document.getElementById("msg");
+    canvas.style.display = "none";
+    msgEl.innerText = "Player ID not found on server";
     return console.warn("Did not send data, websocket not ready");
   }
   //console.log("Send State", state);
