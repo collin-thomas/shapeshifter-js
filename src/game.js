@@ -9,6 +9,9 @@ export function loadGame(gameStateFromSever) {
   const ctx = canvas.getContext("2d");
   canvas.width = 500;
   canvas.height = 500;
+  canvas.style.display = "block";
+  const msgEl = document.getElementById("msg");
+  msgEl.innerText = "";
 
   const keysPressed = {};
 

@@ -43,7 +43,15 @@ const initValuesForPlayableObjects = [
   },
 ];
 
+// For consistency
+const serverState = { connections: [] };
+
 const db = { players: [], playableObjects: [...initValuesForPlayableObjects] };
+
+function getRandomHexColor() {
+  const randomColor = Math.floor(Math.random() * 16777215).toString(16);
+  return "#" + randomColor.padStart(6, "0");
+}
 
 const generateNewPlayer = (id) => {
   // spawn random coords and color.
@@ -54,7 +62,7 @@ const generateNewPlayer = (id) => {
     x: Math.floor(Math.random() * 201) * 2,
     y: Math.floor(Math.random() * 201) * 2,
     size: 30,
-    color: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
+    color: getRandomHexColor(),
     speed: 2,
     lastDirection: null,
     previous: null,
@@ -95,17 +103,24 @@ const syncClients = (server) => {
   );
 };
 
+const generatePlayerId = () => {
+  const playerId = randomUUID();
+  return playerId;
+};
+
 const server = Bun.serve({
   fetch(req, server) {
+    console.log("fetch");
     let playerId;
     const cookie = parseCookies(req);
     if (cookie.id) {
       playerId = cookie.id;
     } else {
-      playerId = randomUUID();
+      playerId = generatePlayerId();
     }
     const success = server.upgrade(req, { data: { id: playerId } });
     if (success) {
+      console.log("ws upgrade success");
       // Bun automatically returns a 101 Switching Protocols
       // if the upgrade succeeds
       return undefined;
@@ -115,9 +130,26 @@ const server = Bun.serve({
 
     // Serve the HTML file
     if (url.pathname === "/") {
+      console.log("page");
       return new Response(Bun.file("./dist/index.html"), {
         headers: {
           "Content-Type": "text/html",
+        },
+      });
+    }
+
+    if (url.pathname === "/admin") {
+      return new Response(Bun.file("./dist/admin.html"), {
+        headers: {
+          "Content-Type": "text/html",
+        },
+      });
+    }
+
+    if (url.pathname === "/api/admin") {
+      return new Response(JSON.stringify({ serverState, db }), {
+        headers: {
+          "Content-Type": "application/json",
         },
       });
     }
@@ -139,6 +171,10 @@ const server = Bun.serve({
     // this is called when a message is received
     async message(ws, message) {
       try {
+        // Prevent someone trying to sending updates
+        // with a player id that doesn't exist.
+        console.log("message");
+
         const data = JSON.parse(message);
         if (data.player) {
           applyPlayerUpdate(data.player);
@@ -153,19 +189,62 @@ const server = Bun.serve({
       }
     },
     async open(ws) {
-      console.log("open", ws.data);
-      const newPlayer = generateNewPlayer(ws.data.id);
-      const message = { ...db, newPlayer };
-      ws.send(JSON.stringify(message));
+      const playerId = ws.data.id;
+      const connectionId = randomUUID();
+
+      console.log("open", {
+        playerId,
+        connectionId,
+        connections: serverState.connections,
+      });
+
+      if (serverState.connections.find((c) => c.playerId === playerId)) {
+        console.log("Connection Refused");
+
+        // Terminate triggers the error event listener on the browser
+        // It returns a code 1006.
+        // We get our code 4000 on the server here.
+        // Why this matters is the close handler gets called on the server.
+        // So it might be safer to go with close(4000).
+        //ws.terminate();
+        ws.close(4000, "Connection Refused");
+        return;
+      }
+
+      // If player exists, they must have opened a second tab,
+      // don't create a new player, use existing one.
+      const player = db.players.find((p) => p.id === playerId);
+      if (player) {
+        const message = { ...db, newPlayer: player };
+        // Send message to just this client
+        ws.send(JSON.stringify(message));
+      } else {
+        const newPlayer = generateNewPlayer(playerId);
+        const message = { ...db, newPlayer };
+        // Send message to just this client
+        ws.send(JSON.stringify(message));
+      }
+
+      serverState.connections.push({ playerId, connectionId });
 
       ws.subscribe("sync-clients");
       syncClients(server);
-    }, // a socket is opened
-    close(ws) {
-      console.log("close", ws.data);
+
+      //console.log("open", playerId, db.players);
+    },
+    close(ws, code, message) {
+      const playerId = ws.data.id;
+      console.log("close", { playerId, code, message });
+      if (code === 4000) {
+        return;
+      }
       ws.unsubscribe("sync-clients");
-      removePlayer(ws.data.id);
+      removePlayer(playerId);
+      serverState.connections = serverState.connections.filter(
+        (p) => p.playerId !== playerId
+      );
       syncClients(server);
+      //console.log("close", playerId, db.players);
     },
     async drain(ws) {}, // the socket is ready to receive more data
   },
